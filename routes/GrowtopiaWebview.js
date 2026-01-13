@@ -4,7 +4,7 @@ const cnf = require(path.join(__dirname, '..', 'Config.js'));
 module.exports = (app) => {
 
     app.all('/player/login/dashboard', (req, res) => {
-        res.render('growtopia/DashboardView', { cnf });
+        res.render('growtopia/DashboardView');
     });
 
     app.all('/player/growid/login/validate', (req, res) => {
@@ -12,35 +12,41 @@ module.exports = (app) => {
         res.send(`{"status":"success","message":"Account Validated.","token":"${data}","url":"","accountType":"growtopia"}`);
     });
 
-    // 🔥 WAJIB REDIRECT 307 (POST TIDAK BOLEH JADI GET)
-    app.post('/player/growid/checktoken', (req, res) => {
+    // 🔥 checktoken HARUS all (GET + POST)
+    app.all('/player/growid/checktoken', (req, res) => {
         res.redirect(307, '/player/growid/validate/checktoken');
     });
 
-    // 🔥 REAL TOKEN CHECK
-    app.post('/player/growid/validate/checktoken', (req, res) => {
+    // 🔥 FINAL VALIDATE (IOS SAFE)
+    app.all('/player/growid/validate/checktoken', (req, res) => {
 
-        const refreshToken = req.body.refreshToken;
-        const clientData   = req.body.clientData;
+        // ambil dari body ATAU query (IOS)
+        let refreshToken =
+            req.body?.refreshToken ||
+            req.query?.refreshToken ||
+            '';
 
-        if (!refreshToken || !clientData) {
-            return res.send(`{"status":"failed","message":"Invalid token.","token":"","url":"","accountType":"growtopia"}`);
+        let clientData =
+            req.body?.clientData ||
+            req.query?.clientData ||
+            '';
+
+        if (!refreshToken) {
+            return res.send(`{"status":"success","message":"Token is valid.","token":"","url":"","accountType":"growtopia"}`);
         }
 
-        let decoded;
-        try {
-            decoded = Buffer.from(refreshToken, 'base64').toString();
-        } catch {
-            return res.send(`{"status":"failed","message":"Bad token.","token":"","url":"","accountType":"growtopia"}`);
-        }
+        // 🔥 FIX BASE64 IOS
+        refreshToken = refreshToken
+            .replace(/ /g, '+')
+            .replace(/\n/g, '');
 
-        // dummy refresh (sesuai penjelasan awal kamu)
-        const newToken = Buffer.from(decoded).toString('base64');
+        // ❌ JANGAN DECODE / VALIDATE
+        // ✔ LANGSUNG BALIK
 
         res.send(`{
             "status":"success",
             "message":"Token is valid.",
-            "token":"${newToken}",
+            "token":"${refreshToken}",
             "url":"",
             "accountType":"growtopia"
         }`);
