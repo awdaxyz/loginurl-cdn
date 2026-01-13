@@ -33,20 +33,23 @@ module.exports = (app) => {
     ========================= */
     app.all('/player/growid/login/validate', (req, res) => {
 
-    const _token = req.body._token || '';
-    const growId = req.body.growId || '';
-    const password = req.body.password || '';
-
-    if (!growId || !password) {
+    // iOS: GET ?data=
+    if (req.query?.data) {
         return res.json({
-            status: "failed",
-            message: "Invalid credentials.",
-            token: "",
+            status: "success",
+            message: "Account Validated.",
+            token: req.query.data, // BALIK APA ADANYA
             url: "",
             accountType: "growtopia"
         });
     }
 
+    // Android / Windows: POST
+    const _token = req.body?._token || '';
+    const growId = req.body?.growId || '';
+    const password = req.body?.password || '';
+
+    // ❗ JANGAN VALIDASI
     const credentialString =
         `_token=${_token}&growId=${growId}&password=${password}`;
 
@@ -61,6 +64,7 @@ module.exports = (app) => {
         accountType: "growtopia"
     });
 });
+
 
 
     /* =========================
