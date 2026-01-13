@@ -20,25 +20,24 @@ module.exports = (app) => {
     // 🔥 STEP 2: VALIDATE TOKEN (IOS SAFE)
     app.all('/player/growid/validate/checktoken', (req, res) => {
 
-        let refreshToken =
-            req.body?.refreshToken ||
-            req.query?.refreshToken ||
-            '';
+    let refreshToken =
+        req.body?.refreshToken ||
+        req.query?.refreshToken ||
+        '';
 
-        // FIX BASE64 IOS
-        refreshToken = (refreshToken || '')
-            .replace(/ /g, '+')
-            .replace(/\n/g, '');
+    refreshToken = refreshToken
+        .replace(/ /g, '+')
+        .replace(/\n/g, '');
 
-        // ❌ JANGAN DECODE
-        // ✔ LANGSUNG BALIK TOKEN
+    // ❗ jangan peduli isinya
+    // ❗ jangan decode
+    // ❗ jangan cek growId / password
 
-        res.send(`{
-            "status":"success",
-            "message":"Token is valid.",
-            "token":"${refreshToken}",
-            "url":"",
-            "accountType":"growtopia"
-        }`);
-    });
-};
+    res.send(`{
+        "status":"success",
+        "message":"Token is valid.",
+        "token":"${refreshToken}",
+        "url":"",
+        "accountType":"growtopia"
+    }`);
+});
