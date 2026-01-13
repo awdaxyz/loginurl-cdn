@@ -82,7 +82,7 @@ module.exports = (app) => {
     });
 
     app.all('/player/growid/checktoken', (req, res) => {
-    res.redirect('/player/growid/validate/checktoken');
+    res.redirect(307, '/player/growid/validate/checktoken');
 });
     app.all('/player/growid/validate/checktoken', (req, res) => {
     const refreshToken = req.body.refreshToken;
