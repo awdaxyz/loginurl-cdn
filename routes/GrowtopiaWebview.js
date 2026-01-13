@@ -1,38 +1,76 @@
 const path = require('path');
 const cnf = require(path.join(__dirname, '..', 'Config.js'));
+const querystring = require('querystring');
 
 module.exports = (app) => {
 
+    /* =========================
+       1️⃣ DASHBOARD
+    ========================= */
     app.all('/player/login/dashboard', (req, res) => {
-        res.render('growtopia/DashboardView', { cnf });
+
+        // client data (optional)
+        const clientData = querystring.stringify(req.body || {});
+        const encodedClientData = Buffer.from(clientData).toString('base64');
+
+        res.render('growtopia/DashboardView', {
+            cnf,
+            _token: encodedClientData
+        });
     });
 
-    app.all('/player/growid/login/validate', (req, res) => {
-        const data = decodeURIComponent(req.query.data || '');
-        res.send(
-            `{"status":"success","message":"Account Validated.","token":"${data}","url":"","accountType":"growtopia"}`
-        );
+    /* =========================
+       2️⃣ LOGIN VALIDATE
+    ========================= */
+    app.post('/player/growid/login/validate', (req, res) => {
+
+        const { _token, growId, password } = req.body;
+
+        // gabungkan SESUAI SPEC
+        const credentialString =
+            `_token=${_token}&growId=${growId}&password=${password}`;
+
+        const encodedCredentials =
+            Buffer.from(credentialString).toString('base64');
+
+        res.json({
+            status: "success",
+            message: "Account Validated.",
+            token: encodedCredentials,
+            url: "",
+            accountType: "growtopia"
+        });
     });
 
-    // STEP 1: REDIRECT (WAJIB)
+    /* =========================
+       4️⃣ CHECKTOKEN (REDIRECT)
+    ========================= */
     app.all('/player/growid/checktoken', (req, res) => {
         res.redirect(307, '/player/growid/validate/checktoken');
     });
 
-    // STEP 2: CHECKTOKEN (STATELESS, IOS SAFE)
+    /* =========================
+       5️⃣ VALIDATE CHECKTOKEN
+    ========================= */
     app.all('/player/growid/validate/checktoken', (req, res) => {
 
         let refreshToken =
-            (req.body && req.body.refreshToken) ||
-            (req.query && req.query.refreshToken) ||
+            req.body?.refreshToken ||
+            req.query?.refreshToken ||
             '';
 
+        // iOS fix (base64 safety)
         refreshToken = refreshToken
             .replace(/ /g, '+')
             .replace(/\n/g, '');
 
-        res.send(
-            `{"status":"success","message":"Token is valid.","token":"${refreshToken}","url":"","accountType":"growtopia"}`
-        );
+        // BALIK APA ADANYA
+        res.json({
+            status: "success",
+            message: "Token is valid.",
+            token: refreshToken,
+            url: "",
+            accountType: "growtopia"
+        });
     });
 };
