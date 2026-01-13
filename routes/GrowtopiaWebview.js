@@ -1,43 +1,38 @@
 const path = require('path');
 const cnf = require(path.join(__dirname, '..', 'Config.js'));
 
-// ===============================
-// RAW BODY PARSER (iOS)
-// ===============================
-function parseRaw(body) {
-    if (!body || typeof body !== 'string') return {};
-    return body.split('&').reduce((acc, pair) => {
-        const [k, v] = pair.split('=');
-        if (k) acc[k] = decodeURIComponent(v || '');
-        return acc;
+function parseQuery(str) {
+    if (!str || typeof str !== 'string') return {};
+    return str.split('&').reduce((a, p) => {
+        const [k, v] = p.split('=');
+        if (k) a[k] = decodeURIComponent(v || '');
+        return a;
     }, {});
+}
+
+function getBody(req) {
+    if (req.body && Object.keys(req.body).length) return req.body;
+    if (typeof req.body === 'string') return parseQuery(req.body);
+    if (req.query && Object.keys(req.query).length) return req.query;
+    return {};
 }
 
 module.exports = (app) => {
 
-    // ===============================
-    // DASHBOARD
-    // ===============================
     app.all('/player/login/dashboard', (req, res) => {
         res.render('growtopia/DashboardView', { cnf });
     });
 
-    // ===============================
-    // LOGIN VALIDATE (DUMMY)
-    // ===============================
+    // LOGIN VALIDATE (dummy)
     app.all('/player/growid/login/validate', (req, res) => {
         const data = decodeURIComponent(req.query.data || '');
         res.send(`{"status":"success","message":"Account Validated.","token":"${data}","url":"","accountType":"growtopia"}`);
     });
 
-    // ===============================
-    // CHECK TOKEN (NO REDIRECT, FIX iOS)
-    // ===============================
+    // ✅ CHECKTOKEN (NO REDIRECT, NO RAW MIDDLEWARE)
     app.all('/player/growid/checktoken', (req, res) => {
 
-        const body = typeof req.body === 'string'
-            ? parseRaw(req.body)
-            : req.body;
+        const body = getBody(req);
 
         const refreshToken = body.refreshToken;
         const clientData   = body.clientData;
@@ -58,15 +53,9 @@ module.exports = (app) => {
         res.send(`{"status":"success","message":"Token is valid.","token":"${newToken}","url":"","accountType":"growtopia"}`);
     });
 
-    // ===============================
-    // VALIDATE CHECK TOKEN (FALLBACK)
-    // ===============================
+    // fallback (optional)
     app.all('/player/growid/validate/checktoken', (req, res) => {
-
-        const body = typeof req.body === 'string'
-            ? parseRaw(req.body)
-            : req.body;
-
+        const body = getBody(req);
         const refreshToken = body.refreshToken;
 
         if (!refreshToken) {
